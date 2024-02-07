@@ -101,7 +101,7 @@ protected:
 public:
    explicit RHipoDS(){};
    explicit RHipoDS(std::string_view file_pattern, int nevt_inspect=10000, int debug=0);
-   explicit RHipoDS(std::vector<std::string> &files, int nevt_inspect=1000, int debug=0);
+   explicit RHipoDS(std::vector<std::string> &files, int nevt_inspect=10000, int debug=0);
    ~RHipoDS() override= default;
 
    void Finalize()
@@ -156,5 +156,6 @@ ClassDef(RHipoDS, 0);
 /// \param[in] nevt_inspect Number of events to inspect to determine the schema.
 /// This is a function to quickly create an RDataFrame from a Hipo file.
 RDataFrame MakeHipoDataFrame(std::string_view fileName, int n_inpect = 10000);
+RDataFrame MakeHipoDataFrame(std::vector<std::string> fileNames, int n_inspect=10000);
 
 #endif //HIPODATAFRAME_RHIPODS_HXX

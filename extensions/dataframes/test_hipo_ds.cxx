@@ -22,7 +22,7 @@ std::vector<float> v_abs(std::vector<float>  &x, std::vector<float> &y, std::vec
 int main(int argc, char **argv) {
    // Very simple test of the Hipo DataFrame.
    // ROOT::EnableImplicitMT();
-   int N_open = 100000;
+   int N_open = 1000000;
    std::chrono::nanoseconds delta_t;
 
    if(argc < 2){

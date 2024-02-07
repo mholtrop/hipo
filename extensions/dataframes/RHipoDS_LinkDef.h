@@ -12,4 +12,5 @@
 #pragma link C++ nestedclasses;
 #pragma link C++ class RHipoDS;
 #pragma link C++ function MakeHipoDataFrame;
+
 #endif // __CLING__

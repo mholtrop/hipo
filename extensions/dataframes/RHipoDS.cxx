@@ -116,7 +116,7 @@ void RHipoDS::Init(int nevt_inspect) {
 
    hipo::event event;
    if(nevt_inspect < 0) return;
-   int counter = 0;
+   int counter = 85610;
 
    if( nevt_inspect == 0){
       for (int ib = 0; ib < fAllBankNames.size(); ++ib) {
@@ -124,7 +124,7 @@ void RHipoDS::Init(int nevt_inspect) {
       }
    }else {
       std::map<std::string, int> bank_column_depth;
-
+      fHipoReader.gotoEvent(counter);
       while (fHipoReader.next() == true && counter < nevt_inspect) { // Only inspect the first N events?
          fHipoReader.read(event);
          for (int ib = 0; ib < fAllBankNames.size(); ++ib) {
@@ -677,6 +677,11 @@ ClassImp(RHipoDS);
 /// This is a function to quickly create an RDataFrame from a Hipo file.
 RDataFrame MakeHipoDataFrame(std::string_view fileName, int n_inspect){
    RDataFrame tdf(std::make_unique<RHipoDS>(fileName, n_inspect));
+   return tdf;
+}
+
+RDataFrame MakeHipoDataFrame(std::vector<std::string> fileNames, int n_inspect){
+   RDataFrame tdf(std::make_unique<RHipoDS>(fileNames, n_inspect));
    return tdf;
 }
 
