@@ -43,6 +43,7 @@ public:
    unsigned int fNSlots = 0U;
    unsigned int fNColumnDepth = 25;
 
+   std::vector<int> fTagsToRead;
    std::vector<std::string>  fHipoFiles;
    int fHipoFiles_index=0;
 
@@ -100,8 +101,8 @@ protected:
 
 public:
    explicit RHipoDS(){};
-   explicit RHipoDS(std::string_view file_pattern, int nevt_inspect=10000, int debug=0);
-   explicit RHipoDS(std::vector<std::string> &files, int nevt_inspect=10000, int debug=0);
+   explicit RHipoDS(std::string_view file_pattern, int nevt_inspect=1000000, std::vector<int> tags_to_read={}, int debug=0);
+   explicit RHipoDS(std::vector<std::string> &files, int nevt_inspect=1000000, std::vector<int> tags_to_read={}, int debug=0);
    ~RHipoDS() override= default;
 
    void Finalize()
@@ -125,7 +126,7 @@ public:
    int AddFiles(std::string_view file_glob);
    void AddHipoTags(int tag){ fHipoReader.setTags(tag);}
    int AddHipoBank(std::string name, int nrows=1);
-   void Init(int nevt_inspect=100);
+   void Init(int nevt_inspect=1000000);
    unsigned long GetEntries(bool current_file_only = false);
    const std::vector<std::string> &GetColumnNames() const override;
    std::string GetTranslatedColumnName(std::string name) const;
@@ -155,7 +156,7 @@ ClassDef(RHipoDS, 0);
 /// \param[in] fileName Path of the Hipo file.
 /// \param[in] nevt_inspect Number of events to inspect to determine the schema.
 /// This is a function to quickly create an RDataFrame from a Hipo file.
-RDataFrame MakeHipoDataFrame(std::string_view fileName, int n_inpect = 10000);
-RDataFrame MakeHipoDataFrame(std::vector<std::string> fileNames, int n_inspect=10000);
+RDataFrame MakeHipoDataFrame(std::string_view fileName, int n_inpect = 1000000, std::vector<int> tags_to_read={}, int debug=0);
+RDataFrame MakeHipoDataFrame(std::vector<std::string> fileNames, int n_inspect=1000000, std::vector<int> tags_to_read={}, int debug=0);
 
 #endif //HIPODATAFRAME_RHIPODS_HXX

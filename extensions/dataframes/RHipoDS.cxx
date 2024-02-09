@@ -63,7 +63,8 @@ the RDataFrame.
 /// \param[in] fileName Path of the Hipo file, or glob pattern for the files.
 /// \param[in] nevt_inspect Number of events to inspect to determine the schema. See Init() for details.
 /// \param[in] debug Debug level, 0 is no debug [default], 1 is some debug, 2 is a lot of debug.
-RHipoDS::RHipoDS(std::string_view file_pattern, int nevt_inspect, int debug): fDebug(debug) {
+RHipoDS::RHipoDS(std::string_view file_pattern, int nevt_inspect, std::vector<int> tags_to_read, int debug):
+   fTagsToRead(tags_to_read), fDebug(debug) {
    AddFiles(file_pattern);
    Init(nevt_inspect);
 }
@@ -73,7 +74,8 @@ RHipoDS::RHipoDS(std::string_view file_pattern, int nevt_inspect, int debug): fD
 /// \param[in] vector<std::string> files, a vector of file names.
 /// \param[in] nevt_inspect Number of events to inspect to determine the schema. See Init() for details.
 /// \param[in] debug Debug level, 0 is no debug [default], 1 is some debug, 2 is a lot of debug.
-RHipoDS::RHipoDS(std::vector<std::string> &files, int nevt_inspect, int debug): fDebug(debug) {
+RHipoDS::RHipoDS(std::vector<std::string> &files, int nevt_inspect, std::vector<int> tags_to_read, int debug):
+   fTagsToRead(tags_to_read), fDebug(debug) {
 
    for(auto &file_name: files) {
       AddFiles(file_name);
@@ -98,11 +100,19 @@ std::string RHipoDS::GetTranslatedColumnName(std::string name) const{
 /// \param[in] nevt_inspect, inspect that many events in the file to see what banks the file actually contains.
 /// If nevt_inspect < 0, no banks will be added at all, and you have to do so by hand.
 /// If nevt_inspect = 0, all the banks are added as vectors, whether they are in the file or not (so you get lots of empties).
-/// If nevt_inspect > 0 then that many events are inspected.
+/// If nevt_inspect > 0 then that many events are inspected, so it can be determined what is in the file, and what is a vector.
+/// Note: Only the first file in the list of files will be inspected for banks.
 void RHipoDS::Init(int nevt_inspect) {
 
+   if(fDebug){
+      std::cout << "fTagsToRead:  ";
+      for(auto t: fTagsToRead) std::cout << t << " ";
+      std::cout << std::endl;
+   }
+
    if(fHipoFiles.empty()) return;
-   fHipoReader.setTags(0);
+   for(auto tag: fTagsToRead) fHipoReader.setTags(tag);
+
    fHipoReader.open(fHipoFiles[0].c_str());
    fHipoCurrentMaxEvent = fHipoReader.getEntries();
    fHipoCurrentMaxRecord = fHipoReader.getNRecords();
@@ -116,22 +126,26 @@ void RHipoDS::Init(int nevt_inspect) {
 
    hipo::event event;
    if(nevt_inspect < 0) return;
-   int counter = 85610;
+   int counter{0};
 
    if( nevt_inspect == 0){
       for (int ib = 0; ib < fAllBankNames.size(); ++ib) {
          AddHipoBank(fAllBankNames[ib], 2); // We don't know anything about the banks, so they are all vectors???
       }
    }else {
+      std::vector<hipo::bank> all_banks;
+      for (int ib = 0; ib < fAllBankNames.size(); ++ib) {
+         auto sch = fHipoDict.getSchema(fAllBankNames[ib].c_str());
+         all_banks.emplace_back(sch);
+      }
       std::map<std::string, int> bank_column_depth;
-      fHipoReader.gotoEvent(counter);
       while (fHipoReader.next() == true && counter < nevt_inspect) { // Only inspect the first N events?
          fHipoReader.read(event);
          for (int ib = 0; ib < fAllBankNames.size(); ++ib) {
-            auto sch = fHipoDict.getSchema(fAllBankNames[ib].c_str());
-            hipo::bank this_bank(sch);
-            event.getStructure(this_bank);
-            int nrows = this_bank.getRows();
+//            auto sch = fHipoDict.getSchema(fAllBankNames[ib].c_str());
+//            hipo::bank this_bank(sch);
+            event.getStructure(all_banks[ib]);
+            int nrows = all_banks[ib].getRows();
 
             auto bcd_itt = bank_column_depth.find(fAllBankNames[ib]);
             if( bcd_itt == bank_column_depth.end() ){
@@ -675,13 +689,13 @@ ClassImp(RHipoDS);
 /// \param[in] fileName Path of the Hipo file.
 /// \param[in] nevt_inspect Number of events to inspect to determine the schema.
 /// This is a function to quickly create an RDataFrame from a Hipo file.
-RDataFrame MakeHipoDataFrame(std::string_view fileName, int n_inspect){
-   RDataFrame tdf(std::make_unique<RHipoDS>(fileName, n_inspect));
+RDataFrame MakeHipoDataFrame(std::string_view fileName, int n_inspect, std::vector<int> tags_to_read, int debug){
+   RDataFrame tdf(std::make_unique<RHipoDS>(fileName, n_inspect, tags_to_read, debug));
    return tdf;
 }
 
-RDataFrame MakeHipoDataFrame(std::vector<std::string> fileNames, int n_inspect){
-   RDataFrame tdf(std::make_unique<RHipoDS>(fileNames, n_inspect));
+RDataFrame MakeHipoDataFrame(std::vector<std::string> fileNames, int n_inspect, std::vector<int> tags_to_read, int debug){
+   RDataFrame tdf(std::make_unique<RHipoDS>(fileNames, n_inspect, tags_to_read, debug));
    return tdf;
 }
 
